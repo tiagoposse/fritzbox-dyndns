@@ -1,0 +1,24 @@
+---
+kind: pipeline
+type: kubernetes
+name: default
+
+steps:
+- name: version
+  image: alpine
+  commands:
+    - cat VERSION > .tags
+  when:
+    branch:
+      - main
+
+- name: build
+  image: plugins/docker
+  settings:
+    repo: registry-docker-registry.tools.svc.cluster.local:5000/dyndns
+    registry: registry-docker-registry.tools.svc.cluster.local:5000
+    dockerfile: Dockerfile
+    insecure: true
+  when:
+    branch:
+      - main
