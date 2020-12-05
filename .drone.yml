@@ -3,6 +3,10 @@ kind: pipeline
 type: kubernetes
 name: default
 
+trigger:
+  branch:
+  - main
+
 steps:
 - name: version
   image: alpine
