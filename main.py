@@ -1,4 +1,4 @@
-import yaml, os, re, subprocess, sys
+import yaml, os, re, sys
 import xml.etree.ElementTree as ET
 
 os.chdir(os.path.realpath(os.path.dirname(sys.argv[0])))
@@ -23,14 +23,7 @@ def main():
 
     ipv6_prefix = ':'.join(fc.call_action('WANIPConn1', 'X_AVM_DE_GetIPv6Prefix')['NewIPv6Prefix'].split(':')[0:4])
 
-    process = subprocess.Popen(
-      f"/usr/bin/host -6 -v { conf['ipv6']['target'] } { re.sub(r'https?://', '', conf['fritzbox']['address']) }".split(' '),
-      stdout=subprocess.PIPE, 
-      stderr=subprocess.PIPE
-    )
-    stdout, stderr = process.communicate()
-
-    external_ipv6 = re.search(fr"{ ipv6_prefix }.+", stdout.decode('utf-8')).group(0)
+    external_ipv6 = f"{ ipv6_prefix }:{ conf['ipv6']['target'] }"
   else:
     external_ipv6 = ''
 
