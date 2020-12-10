@@ -1,28 +1,52 @@
----
 kind: pipeline
 type: kubernetes
-name: default
-
-trigger:
-  branch:
-  - main
+name: build app
 
 steps:
-- name: version
-  image: alpine
-  commands:
-    - cat VERSION > .tags
-  when:
-    branch:
-      - main
+  - name: echo
+    image: alpine
+    commands:
+      - echo README changed
+    when:
+      paths:
+        include:
+          - "*.md"
 
-- name: build
-  image: plugins/docker
-  settings:
-    repo: registry-docker-registry.tools.svc.cluster.local:5000/dyndns
-    registry: registry-docker-registry.tools.svc.cluster.local:5000
-    dockerfile: Dockerfile
-    insecure: true
-  when:
-    branch:
-      - main
+  - name: version
+    image: alpine
+    commands:
+      - cat code/VERSION > .tags
+      - echo "\nlatest" >> .tags
+    when:
+      paths:
+        include:
+          - code/*
+
+  - name: build
+    image: plugins/docker
+    settings:
+      repo: registry.192.168.178.48.nip.io/dyndns
+      registry: registry.192.168.178.48.nip.io
+      dockerfile: code/Dockerfile
+      insecure: true
+    when:
+      paths:
+        include:
+          - code/*
+# ---
+# kind: pipeline
+# type: kubernetes
+# name: build chart
+
+# trigger:
+#   paths:
+#     include:
+#       - "chart/*"
+
+# steps:
+# - name: Package chart
+#   image: registry.192.168.178.48.nip.io/helm-build:latest
+#   commands:
+#     - helm lint chart/
+#     - helm package chart/
+#     - curl -X POST --data-binary @fritzbox-dyndns-`cat chart/Chart.yaml | grep "version:" | cut -d " " -f 2`.tgz -k https://charts.192.168.178.48.nip.io/api/charts

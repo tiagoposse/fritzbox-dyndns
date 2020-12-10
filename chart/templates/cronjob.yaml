@@ -1,0 +1,52 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ include "dyndns.fullname" . }}
+spec:
+  schedule: {{ .Values.schedule }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          {{- with .Values.podAnnotations }}
+          annotations:
+            {{- toYaml . | nindent 14 }}
+          {{- end }}
+          labels:
+            {{- include "dyndns.labels" . | nindent 14 }}
+        spec:
+          serviceAccountName: {{ include "dyndns.serviceAccountName" . }}
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          restartPolicy: {{ .Values.restartPolicy }}
+
+          containers:
+            - name: dyndns
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              env:
+                - name: CONFIG_PATH
+                  value: /etc/configs/config.yml
+              ports:
+                - name: http
+                  containerPort: 80
+                  protocol: TCP
+              volumeMounts:
+                - name: config
+                  mountPath: /etc/configs
+          volumes:
+            - name: config
+              configMap:
+                name: {{ include "dyndns.fullname" . }}-cm
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
